@@ -2,7 +2,7 @@ from scipy.special import softmax
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import argparse
 import json
-import numpy
+import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -16,14 +16,15 @@ def classify_sentiment(tokenizer, model, text):
     output = model(**encoded_input)
     scores = output[0][0].detach().numpy()
     scores = softmax(scores)
-    
-    return np.argmin(scores)
+    return int(np.argmax(scores))
 
 def classify_post(post):
     if 'answers' in post: #Question
-        augmented = post['title'] + post['body']
+        augmented = post['title'] + '\n' + post['body']
         #del post['title'], post['body']
         post['body_sentiment'] = classify_sentiment(tokenizer, model, augmented)
+        for a in post['answers']:
+            classify_post(a)
     else: #Answer
         post['body_sentiment'] = classify_sentiment(tokenizer, model, post['body'])
         #del post['body']

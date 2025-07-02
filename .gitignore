@@ -196,3 +196,5 @@ cython_debug/
 *.jsonl
 
 *.zip
+
+*.json

@@ -34,7 +34,23 @@ def load_post_data(path: str, keep_text: bool = False):
                 for c in a['comments']:
                     c[val] = datetime.fromisoformat(c[val])
 
+            #Convert user IDs to integers
+            if 'owner_user_id' in obj and obj['owner_user_id'] is not None:
+                obj['owner_user_id'] = int(obj['owner_user_id'])
+            
+            for c in obj['comments']:
+                if 'user_id' in c and c['user_id'] is not None:
+                    c['user_id'] = int(c['user_id'])
+            
+            for a in obj['answers']:
+                if 'owner_user_id' in a and a['owner_user_id'] is not None:
+                    a['owner_user_id'] = int(a['owner_user_id'])
+                for c in a['comments']:
+                    if 'user_id' in c and c['user_id'] is not None:
+                        c['user_id'] = int(c['user_id'])
+
             data[obj['id']] = obj
+
     return data
 
 def load_user_data(path: str):
@@ -72,3 +88,42 @@ def min_sentiment(post: dict, include_answers = True):
                 val = min(val, c['text_sentiment'])
     
     return val
+
+def get_users_average_sentiment(post_data: dict, minimum_posts: int = 10):
+    '''
+    Returns the average sentiment of all users based on their posts, comments, and answers.
+    If a user has less than `minimum_posts` posts, comments, or answers, they are not included in the result.
+    '''
+    user_sentiments = {}
+    for post in post_data.values():
+        user_id = post['owner_user_id']
+        if user_id not in user_sentiments:
+            user_sentiments[user_id] = {'count': 0, 'total': 0}
+
+        user_sentiments[user_id]['count'] += 1
+        user_sentiments[user_id]['total'] += post["body_sentiment"]
+
+        for c in post['comments']:
+            if c['user_id'] not in user_sentiments:
+                user_sentiments[c['user_id']] = {'count': 0, 'total': 0}
+            user_sentiments[c['user_id']]['count'] += 1
+            user_sentiments[c['user_id']]['total'] += c["text_sentiment"]
+
+        for a in post['answers']:
+            if a['owner_user_id'] not in user_sentiments:
+                user_sentiments[a['owner_user_id']] = {'count': 0, 'total': 0}
+            user_sentiments[a['owner_user_id']]['count'] += 1
+            user_sentiments[a['owner_user_id']]['total'] += a["body_sentiment"]
+
+            for c in a['comments']:
+                if c['user_id'] not in user_sentiments:
+                    user_sentiments[c['user_id']] = {'count': 0, 'total': 0}
+                user_sentiments[c['user_id']]['count'] += 1
+                user_sentiments[c['user_id']]['total'] += c["text_sentiment"]
+
+    result = {}
+    for user_id, sentiment in user_sentiments.items():
+        if sentiment['count'] >= minimum_posts:
+            result[user_id] = sentiment['total'] / sentiment['count']
+
+    return result

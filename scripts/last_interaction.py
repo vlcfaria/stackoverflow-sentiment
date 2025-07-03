@@ -43,7 +43,7 @@ if __name__ == '__main__':
         c_indexed[str(c['user_id'])] = c['max']
     p_indexed = {}
     for p in posts:
-        p_indexed[str(p['owner_user_id'])] = c['max']
+        p_indexed[str(p['owner_user_id'])] = p['max']
 
     #Add the interactions
     for id, user in data.items():

@@ -14,6 +14,13 @@ def load_post_data(path: str, keep_text: bool = False):
         for line in inp:
             obj = json.loads(line)
 
+            #Add text length
+            obj['body_len'] = len(obj['body'])
+            for c in obj['comments']: c['text_len'] = len(c['text'])
+            for a in obj['answers']:
+                a['body_len'] = len(a['body'])
+                for c in a['comments']: c['text_len'] = len(c['text'])
+
             #Remove all text attributes
             if not keep_text:
                 del obj['body'], obj['title']

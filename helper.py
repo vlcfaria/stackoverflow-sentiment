@@ -209,3 +209,17 @@ def get_user_to_user_posts(post_data):
         result[user_id] = posts
 
     return result
+
+def get_posts_by_tag_and_sentiment(post_data: dict, tag: str, sentiment: int, amount: int):
+    result_posts = []
+    for post in post_data.values():
+        if len(result_posts) >= amount:
+            break
+        
+        post_tags = post['tags']
+        post_sentiment_val = post['body_sentiment']
+
+        if post_sentiment_val is not None and post_sentiment_val == sentiment and tag in post_tags:
+            result_posts.append(post)
+            
+    return result_posts

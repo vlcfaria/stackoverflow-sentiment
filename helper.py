@@ -57,7 +57,7 @@ def load_post_data(path: str, keep_text: bool = False):
                         c['user_id'] = int(c['user_id'])
 
             obj['average_sentiment'] = get_post_average_sentiment(obj)
-            obj['minimum_sentiment'] = get_post_minimum_sentiment(obj)
+            obj['minimum_sentiment'] = min_sentiment(obj)
 
             data[obj['id']] = obj
 
@@ -158,23 +158,7 @@ def get_post_average_sentiment(post: dict):
 
     return total_sentiment / count if count > 0 else None
 
-def get_post_minimum_sentiment(post: dict):
-    '''
-    Returns the minimum sentiment of a post, including its comments and answers.
-    '''
-    min_sentiment = post['body_sentiment']
-
-    for c in post['comments']:
-        min_sentiment = min(min_sentiment, c['text_sentiment'])
-
-    for a in post['answers']:
-        min_sentiment = min(min_sentiment, a['body_sentiment'])
-        for c in a['comments']:
-            min_sentiment = min(min_sentiment, c['text_sentiment'])
-
-    return min_sentiment
-
-def get_user_to_post_dict(post_data):
+def get_user_to_interaction_posts_dict(post_data):
     '''
     Returns a dictionary mapping user IDs to the posts they have interacted with, sorted by the date
     of the most recent interaction.
@@ -201,6 +185,25 @@ def get_user_to_post_dict(post_data):
                 result[comment['user_id']].append((post_id, comment['creation_date']))
 
     # Sort each user's posts by the date of the most recent interaction
+    # Most recent first, so we sort by date descending
+    for user_id, posts in result.items():
+        posts.sort(key=lambda x: x[1], reverse=True)
+        result[user_id] = posts
+
+    return result
+
+def get_user_to_user_posts(post_data):
+    '''
+    Returns a dictionary mapping users to the posts they have created
+    '''
+    result = {}
+    for post_id, post in post_data.items():
+        if post['owner_user_id'] not in result:
+            result[post['owner_user_id']] = []
+        result[post['owner_user_id']].append((post_id, post['creation_date']))
+
+    # Sort each user's posts by the date
+    # Most recent first, so we sort by date descending
     for user_id, posts in result.items():
         posts.sort(key=lambda x: x[1], reverse=True)
         result[user_id] = posts
